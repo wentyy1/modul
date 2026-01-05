@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Пошук товарів</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+  <h1>🔍 Пошук товарів</h1>
+
+  <div class="search-box">
+    <input id="q" placeholder="Введи: клавіатура або мишка">
+    <button id="btn">Пошук</button>
+  </div>
+
+  <div id="result" class="products"></div>
+</div>
+
+<script>
+const products = [
+  { type: "клавіатура", name: "Logitech K120", price: 599, brand: "Logitech" },
+  { type: "клавіатура", name: "Redragon Kumara", price: 1399, brand: "Redragon" },
+  { type: "клавіатура", name: "Razer BlackWidow", price: 4599, brand: "Razer" },
+  { type: "мишка", name: "Logitech G102", price: 999, brand: "Logitech" },
+  { type: "мишка", name: "SteelSeries Rival 3", price: 1499, brand: "SteelSeries" },
+  { type: "мишка", name: "Razer DeathAdder", price: 2199, brand: "Razer" }
+];
+
+const input = document.getElementById("q");
+const btn = document.getElementById("btn");
+const result = document.getElementById("result");
+
+function show(list) {
+  if (!list.length) {
+    result.innerHTML = `<p class="empty">Нічого не знайдено</p>`;
+    return;
+  }
+
+  result.innerHTML = list.map(p => `
+    <div class="card">
+      <h3>${p.name}</h3>
+      <p>${p.brand}</p>
+      <span>${p.type}</span>
+      <b>${p.price} грн</b>
+    </div>
+  `).join("");
+}
+
+function search() {
+  const q = input.value.toLowerCase();
+  const filtered = products.filter(p =>
+    p.type.includes(q) || p.name.toLowerCase().includes(q)
+  );
+  show(filtered);
+}
+
+btn.onclick = search;
+input.onkeydown = e => e.key === "Enter" && search();
+
+show(products);
+</script>
+
+</body>
+</html>
