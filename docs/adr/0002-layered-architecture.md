@@ -1,8 +1,5 @@
 # ADR 0002 — Layered Architecture
 
-**Date:** 2026-01-05  
-**Status:** Accepted
-
 ## Context
 Проєкт Peripheral Shop розробляється як модульний моноліт.  
 Для забезпечення підтримуваності та масштабованості коду необхідно
