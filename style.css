@@ -2,96 +2,89 @@ body {
   background: #0f172a;
   font-family: system-ui, sans-serif;
   margin: 0;
-  padding: 0;
   color: #e5e7eb;
 }
 
 .app {
   max-width: 900px;
-  margin: 50px auto;
+  margin: 40px auto;
   padding: 30px;
   background: #020617;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  border-radius: 18px;
 }
 
 h1 {
   text-align: center;
-  margin-bottom: 25px;
 }
 
-.search-box {
+.search-box, .create-box {
   display: flex;
   gap: 10px;
-  margin-bottom: 30px;
+  margin-bottom: 16px;
 }
 
-.search-box input {
+input {
   flex: 1;
-  padding: 14px;
-  border-radius: 12px;
+  padding: 12px;
+  border-radius: 10px;
   border: none;
-  font-size: 16px;
 }
 
-.search-box button {
-  padding: 14px 20px;
-  border-radius: 12px;
+button {
+  padding: 12px 18px;
+  border-radius: 10px;
   border: none;
   background: #2563eb;
   color: white;
-  cursor: pointer;
   font-weight: 600;
+  cursor: pointer;
 }
 
-.search-box button:hover {
-  background: #1d4ed8;
+button:disabled {
+  opacity: .6;
 }
 
 .products {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px;
+  gap: 16px;
 }
 
 .card {
   background: #020617;
   border: 1px solid #1e293b;
-  border-radius: 16px;
-  padding: 16px;
-  transition: 0.2s;
+  border-radius: 14px;
+  padding: 14px;
 }
 
-.card:hover {
-  transform: translateY(-5px);
-  border-color: #2563eb;
-}
+.card h3 { margin: 0 0 6px; }
 
-.card h3 {
-  margin: 0 0 6px;
-}
-
-.card p {
-  margin: 0;
-  color: #94a3b8;
-}
+.card p { color: #94a3b8; margin: 0; }
 
 .card span {
   display: inline-block;
-  margin: 10px 0;
+  margin: 8px 0;
   padding: 4px 10px;
   background: #1e293b;
   border-radius: 999px;
   font-size: 13px;
 }
 
-.card b {
-  display: block;
-  margin-top: 8px;
-  color: #22c55e;
-}
+.card b { color: #22c55e; }
 
 .empty {
   text-align: center;
   color: #f87171;
 }
+
+.degraded {
+  background: rgba(239,68,68,0.15);
+  border: 1px solid #ef4444;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.hidden { display: none; }
