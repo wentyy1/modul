@@ -10,10 +10,6 @@
 <div class="app">
   <h1>🛒 Peripheral Shop</h1>
 
-  <div id="degraded" class="degraded hidden">
-    ⚠️ Сервіс перевантажено. Спробуйте пізніше.
-  </div>
-
   <div class="search-box">
     <input id="q" placeholder="Пошук: клавіатура, мишка...">
     <button id="btn">Пошук</button>
@@ -21,55 +17,25 @@
 
   <div class="create-box">
     <input id="newName" placeholder="Назва товару">
-    <button id="createBtn">Створити (POST)</button>
+    <button id="createBtn">Додати</button>
   </div>
 
   <div id="result" class="products"></div>
 </div>
 
 <script>
-const API = "http://localhost:8081";
+const products = [
+  { name: "Logitech K120", type: "клавіатура", brand: "Logitech", price: 599 },
+  { name: "Razer BlackWidow", type: "клавіатура", brand: "Razer", price: 4599 },
+  { name: "Logitech G102", type: "мишка", brand: "Logitech", price: 999 },
+  { name: "Razer DeathAdder", type: "мишка", brand: "Razer", price: 2199 }
+];
 
-const products = [];
 const qEl = document.getElementById("q");
 const btn = document.getElementById("btn");
 const result = document.getElementById("result");
-const degradedEl = document.getElementById("degraded");
 const createBtn = document.getElementById("createBtn");
 const newName = document.getElementById("newName");
-
-let consecutiveFails = 0;
-
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-function backoff(base, attempt) {
-  return base * 2 ** attempt + Math.random() * 100;
-}
-
-async function fetchWithResilience(url, opts = {}) {
-  const retries = opts.retries ?? 2;
-  const attempt = opts._a ?? 0;
-
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), 3500);
-
-  try {
-    const res = await fetch(url, { ...opts, signal: controller.signal });
-    if ([500,502,503,504].includes(res.status) && retries > 0) {
-      await sleep(backoff(300, attempt));
-      return fetchWithResilience(url, { ...opts, retries: retries - 1, _a: attempt + 1 });
-    }
-    return res;
-  } catch {
-    if (retries > 0) {
-      await sleep(backoff(300, attempt));
-      return fetchWithResilience(url, { ...opts, retries: retries - 1, _a: attempt + 1 });
-    }
-    throw new Error("network");
-  } finally {
-    clearTimeout(t);
-  }
-}
 
 function show(list) {
   if (!list.length) {
@@ -93,50 +59,23 @@ btn.onclick = () => {
   ));
 };
 
-async function createProduct() {
-  const payload = {
-    name: newName.value || "Untitled",
-    type: "mouse",
+createBtn.onclick = () => {
+  const name = newName.value.trim();
+  if (!name) return;
+
+  const newProduct = {
+    name,
+    type: "мишка",
     brand: "Demo",
     price: 100
   };
 
-  try {
-    const res = await fetchWithResilience(`${API}/products`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw data;
-
-    products.push(data);
-    show(products);
-    consecutiveFails = 0;
-    degradedEl.classList.add("hidden");
-  } catch {
-    consecutiveFails++;
-    if (consecutiveFails >= 3) {
-      degradedEl.classList.remove("hidden");
-      createBtn.disabled = true;
-      setTimeout(() => {
-        createBtn.disabled = false;
-        degradedEl.classList.add("hidden");
-        consecutiveFails = 0;
-      }, 5000);
-    }
-  }
-}
-createBtn.onclick = createProduct;
-
-async function load() {
-  const res = await fetch(`${API}/products`);
-  const data = await res.json();
-  products.push(...data);
+  products.push(newProduct);
+  newName.value = "";
   show(products);
-}
-load();
+};
+
+show(products);
 </script>
 
 </body>
