@@ -2,42 +2,80 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <title>Пошук товарів</title>
+  <title>Peripheral Shop</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="app">
-  <h1>🔍 Пошук товарів</h1>
+  <h1>🛒 Peripheral Shop</h1>
+
+  <div id="degraded" class="degraded hidden">
+    ⚠️ Сервіс перевантажено. Спробуйте пізніше.
+  </div>
 
   <div class="search-box">
-    <input id="q" placeholder="Введи: клавіатура або мишка">
+    <input id="q" placeholder="Пошук: клавіатура, мишка...">
     <button id="btn">Пошук</button>
+  </div>
+
+  <div class="create-box">
+    <input id="newName" placeholder="Назва товару">
+    <button id="createBtn">Створити (POST)</button>
   </div>
 
   <div id="result" class="products"></div>
 </div>
 
 <script>
-const products = [
-  { type: "клавіатура", name: "Logitech K120", price: 599, brand: "Logitech" },
-  { type: "клавіатура", name: "Redragon Kumara", price: 1399, brand: "Redragon" },
-  { type: "клавіатура", name: "Razer BlackWidow", price: 4599, brand: "Razer" },
-  { type: "мишка", name: "Logitech G102", price: 999, brand: "Logitech" },
-  { type: "мишка", name: "SteelSeries Rival 3", price: 1499, brand: "SteelSeries" },
-  { type: "мишка", name: "Razer DeathAdder", price: 2199, brand: "Razer" }
-];
+const API = "http://localhost:8081";
 
-const input = document.getElementById("q");
+const products = [];
+const qEl = document.getElementById("q");
 const btn = document.getElementById("btn");
 const result = document.getElementById("result");
+const degradedEl = document.getElementById("degraded");
+const createBtn = document.getElementById("createBtn");
+const newName = document.getElementById("newName");
+
+let consecutiveFails = 0;
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function backoff(base, attempt) {
+  return base * 2 ** attempt + Math.random() * 100;
+}
+
+async function fetchWithResilience(url, opts = {}) {
+  const retries = opts.retries ?? 2;
+  const attempt = opts._a ?? 0;
+
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), 3500);
+
+  try {
+    const res = await fetch(url, { ...opts, signal: controller.signal });
+    if ([500,502,503,504].includes(res.status) && retries > 0) {
+      await sleep(backoff(300, attempt));
+      return fetchWithResilience(url, { ...opts, retries: retries - 1, _a: attempt + 1 });
+    }
+    return res;
+  } catch {
+    if (retries > 0) {
+      await sleep(backoff(300, attempt));
+      return fetchWithResilience(url, { ...opts, retries: retries - 1, _a: attempt + 1 });
+    }
+    throw new Error("network");
+  } finally {
+    clearTimeout(t);
+  }
+}
 
 function show(list) {
   if (!list.length) {
     result.innerHTML = `<p class="empty">Нічого не знайдено</p>`;
     return;
   }
-
   result.innerHTML = list.map(p => `
     <div class="card">
       <h3>${p.name}</h3>
@@ -48,18 +86,57 @@ function show(list) {
   `).join("");
 }
 
-function search() {
-  const q = input.value.toLowerCase();
-  const filtered = products.filter(p =>
-    p.type.includes(q) || p.name.toLowerCase().includes(q)
-  );
-  show(filtered);
+btn.onclick = () => {
+  const q = qEl.value.toLowerCase();
+  show(products.filter(p =>
+    p.name.toLowerCase().includes(q) || p.type.includes(q)
+  ));
+};
+
+async function createProduct() {
+  const payload = {
+    name: newName.value || "Untitled",
+    type: "mouse",
+    brand: "Demo",
+    price: 100
+  };
+
+  try {
+    const res = await fetchWithResilience(`${API}/products`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw data;
+
+    products.push(data);
+    show(products);
+    consecutiveFails = 0;
+    degradedEl.classList.add("hidden");
+  } catch {
+    consecutiveFails++;
+    if (consecutiveFails >= 3) {
+      degradedEl.classList.remove("hidden");
+      createBtn.disabled = true;
+      setTimeout(() => {
+        createBtn.disabled = false;
+        degradedEl.classList.add("hidden");
+        consecutiveFails = 0;
+      }, 5000);
+    }
+  }
 }
+createBtn.onclick = createProduct;
 
-btn.onclick = search;
-input.onkeydown = e => e.key === "Enter" && search();
-
-show(products);
+async function load() {
+  const res = await fetch(`${API}/products`);
+  const data = await res.json();
+  products.push(...data);
+  show(products);
+}
+load();
 </script>
 
 </body>
