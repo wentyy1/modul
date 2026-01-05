@@ -4,36 +4,207 @@ info:
   version: 1.0.0
 
 paths:
-  /products:
-    post:
-      summary: Create product
-      responses:
-        '201': { description: Created }
-    get:
-      summary: Get all products
-      responses:
-        '200': { description: OK }
-
-  /products/{id}:
-    get:
-      summary: Get product
-      responses:
-        '200': { description: OK }
-        '404': { description: Not Found }
-    put:
-      summary: Update product
-      responses:
-        '200': { description: Updated }
-        '400': { description: Validation error }
-        '404': { description: Not Found }
-    delete:
-      summary: Delete product
-      responses:
-        '204': { description: Deleted }
-        '404': { description: Not Found }
-
   /health:
     get:
       summary: Health check
       responses:
-        '200': { description: OK }
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: ok
+
+  /products:
+    post:
+      summary: Create product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductCreateRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      summary: Get all products
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductResponse"
+
+  /products/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Product id
+        schema:
+          type: string
+          example: "p-1001"
+
+    get:
+      summary: Get product by id
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      summary: Update product by id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdateRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      summary: Delete product by id
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    ProductType:
+      type: string
+      enum: [keyboard, mouse]
+
+    ProductCreateRequest:
+      type: object
+      required: [name, type, brand, price]
+      properties:
+        name:
+          type: string
+          example: "Logitech K120"
+        type:
+          $ref: "#/components/schemas/ProductType"
+        brand:
+          type: string
+          example: "Logitech"
+        price:
+          type: number
+          format: float
+          example: 599
+
+    ProductUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Logitech K120 (UA)"
+        type:
+          $ref: "#/components/schemas/ProductType"
+        brand:
+          type: string
+          example: "Logitech"
+        price:
+          type: number
+          format: float
+          example: 649
+
+    ProductResponse:
+      type: object
+      required: [id, name, type, brand, price, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          example: "p-1001"
+        name:
+          type: string
+          example: "Logitech K120"
+        type:
+          $ref: "#/components/schemas/ProductType"
+        brand:
+          type: string
+          example: "Logitech"
+        price:
+          type: number
+          format: float
+          example: 599
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-01-05T10:15:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-01-05T10:20:00Z"
+
+    ErrorDetail:
+      type: object
+      properties:
+        field:
+          type: string
+          example: "name"
+        message:
+          type: string
+          example: "Name is required"
+
+    ErrorResponse:
+      type: object
+      required: [error, code]
+      properties:
+        error:
+          type: string
+          example: "ValidationError"
+        code:
+          type: string
+          example: "NAME_REQUIRED"
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorDetail"
